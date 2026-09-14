@@ -98,28 +98,79 @@ semi-annual, quarterly and monthly coupons. Schedules are generated backward
 from maturity, so an off-cycle issue produces a correctly handled irregular
 first period.
 
-## Install
+## As an MCP server
+
+Six tools, so an agent can stop doing this arithmetic in its head.
+
+| Tool | Does |
+|---|---|
+| `yield_from_price_tool` | Solves yield to maturity from a market price |
+| `price_from_yield_tool` | Clean and dirty price at a given yield |
+| `bond_analytics_tool` | Duration, DV01, convexity — with both cross-checks |
+| `cashflow_schedule_tool` | Remaining flows, discount factors, present values |
+| `scenario_shock_tool` | Exact repricing vs first- and second-order estimates |
+| `check_consistency_tool` | Audits a yield someone else produced |
+
+Two decisions make these usable by a model rather than merely callable.
+
+**Units live in the parameter names.** A field called `coupon_rate` invites
+the question of whether 4% is `4` or `0.04`, and a wrong guess is off by a
+factor of a hundred while looking reasonable. Everything here is
+`coupon_rate_pct`, `clean_price_pct_of_face`, `ytm_pct`. Nothing to guess.
+
+**Every valuation returns its own verdict.** Results carry an
+`all_checks_passed` flag and the list of bounds behind it, so the model sees
+whether the number is admissible, not just what it is.
+
+### Install
+
+```bash
+pip install "bondmath[mcp]"
+```
+
+Then register it. In Claude Desktop, add to `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "fixed-income": {
+      "command": "fixed-income-mcp"
+    }
+  }
+}
+```
+
+In Claude Code:
+
+```bash
+claude mcp add fixed-income -- fixed-income-mcp
+```
+
+### Auditing a suspect figure
+
+`check_consistency_tool` exists for the case that started this project —
+checking a number someone already produced:
+
+```
+claimed_ytm_pct        4.01
+correct_ytm_pct        4.686736
+error_bp               -67.67
+all_checks_passed      false
+
+[FAIL] below_par_ordering: trading below par at 97.8000%, so
+       coupon < current yield < YTM must hold:
+       4.0000% < 4.0900% < 4.0100%
+```
+
+## Install for development
 
 ```bash
 pip install -e ".[dev]"
-```
-
-Tests:
-
-```bash
 python -m pytest -q
 ```
 
-35 tests, including regression tests that pin the numbers in the write-up. If
-someone ever swaps the divisor back, `test_naive_divisor_is_the_one_that_disagrees`
-fails.
-
-## Status
-
-The `bondmath` core is complete and tested. The MCP server layer is in
-progress — it will expose `price_from_yield`, `yield_from_price`,
-`bond_analytics`, `cashflow_schedule`, `scenario_shock` and
-`check_consistency` as agent tools.
+55 tests. Some pin the numbers in the write-up: if someone ever swaps the
+divisor back, `test_naive_divisor_is_the_one_that_disagrees` fails.
 
 ## Not covered
 

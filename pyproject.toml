@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [{ name = "José Navarro" }]
-keywords = ["fixed-income", "bonds", "duration", "convexity", "finance"]
+keywords = ["fixed-income", "bonds", "duration", "convexity", "finance", "mcp"]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Intended Audience :: Financial and Insurance Industry",
@@ -18,13 +18,21 @@ classifiers = [
   "Programming Language :: Python :: 3",
   "Topic :: Office/Business :: Financial",
 ]
+# The analytics core has no dependencies. The MCP server layer needs the SDK,
+# which is why it sits behind an extra: `pip install bondmath` gives you the
+# library alone, `pip install bondmath[mcp]` adds the server.
 dependencies = []
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0"]
+mcp = ["mcp>=2.0"]
+dev = ["pytest>=8.0", "anyio>=4.0", "mcp>=2.0"]
+
+[project.scripts]
+fixed-income-mcp = "bondmath.server:main"
 
 [project.urls]
 Homepage = "https://github.com/joselillotrax-cell/fixed-income-mcp"
+Source = "https://github.com/joselillotrax-cell/fixed-income-mcp"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/bondmath"]
