@@ -58,6 +58,60 @@ async def test_every_tool_documents_itself():
         assert len(tool.description) > 80
 
 
+def _schema(tool):
+    return getattr(tool, "inputSchema", None) or getattr(tool, "input_schema")
+
+
+@pytest.mark.anyio
+async def test_every_parameter_carries_a_description():
+    """The regression guard for the bug found in week three.
+
+    Google-style `Args:` blocks do not reach the JSON Schema — only
+    `Annotated[..., Field(description=...)]` does. Without this test the
+    schema silently ships with bare field names, and a model has to infer
+    from the name alone whether 4% is 4 or 0.04.
+    """
+    bare: list[str] = []
+    for tool in await server.list_tools():
+        for name, spec in _schema(tool)["properties"].items():
+            if not spec.get("description"):
+                bare.append(f"{tool.name}.{name}")
+    assert not bare, f"parameters missing a description: {bare}"
+
+
+@pytest.mark.anyio
+async def test_percentage_fields_say_so_in_their_description():
+    """The unit must be stated where the model reads it, not only in the name."""
+    for tool in await server.list_tools():
+        for name, spec in _schema(tool)["properties"].items():
+            if name.endswith("_pct") or name.endswith("_pct_of_face"):
+                assert "PERCENTAGE" in spec["description"].upper(), (
+                    f"{tool.name}.{name} does not state its unit"
+                )
+
+
+@pytest.mark.anyio
+async def test_conventions_and_frequencies_are_enumerated():
+    """Invalid values should be unrepresentable, not merely rejected."""
+    for tool in await server.list_tools():
+        props = _schema(tool)["properties"]
+        assert props["day_count"]["enum"] == [
+            "ACT/ACT ICMA",
+            "30/360",
+            "ACT/365",
+            "ACT/360",
+        ]
+        assert props["payments_per_year"]["enum"] == [1, 2, 4, 12]
+
+
+@pytest.mark.anyio
+async def test_dates_are_constrained_to_iso_format():
+    for tool in await server.list_tools():
+        for name, spec in _schema(tool)["properties"].items():
+            if name.endswith("_date"):
+                assert spec.get("pattern") == r"^\d{4}-\d{2}-\d{2}$"
+
+
 # --------------------------------------------------------------------------
 # pricing tools
 # --------------------------------------------------------------------------
