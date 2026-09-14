@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "bondmath"
-version = "0.1.0"
+version = "0.1.1"
 description = "Fixed-income analytics that cross-check their own work"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -29,6 +29,7 @@ dev = ["pytest>=8.0", "anyio>=4.0", "mcp>=2.0"]
 
 [project.scripts]
 fixed-income-mcp = "bondmath.server:main"
+bondmath = "bondmath.server:main"
 
 [project.urls]
 Homepage = "https://github.com/joselillotrax-cell/fixed-income-mcp"
