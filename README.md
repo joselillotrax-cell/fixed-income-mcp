@@ -1,5 +1,7 @@
 # fixed-income-mcp
 
+<!-- mcp-name: io.github.joselillotrax-cell/fixed-income-mcp -->
+
 Fixed-income analytics for AI agents, with the checks that catch the errors
 models actually make.
 
@@ -146,6 +148,51 @@ In Claude Code:
 claude mcp add fixed-income -- fixed-income-mcp
 ```
 
+**If the command isn't found:** the pip-installed script may not be on the
+launching process's `PATH`. Use the absolute path instead — find it with
+`which fixed-income-mcp` (inside the environment you installed into) and put
+that full path in `command`.
+
+**If you're on macOS and the server shows "disconnected" with no clear
+error:** check `~/Library/Logs/Claude/mcp-server-fixed-income.log` before
+anything else — the panel's error message is not the real one. Two macOS
+specifics bit this project during development: Python 3.14 silently skips
+hidden `.pth` files, and iCloud Drive can mark files inside `~/Desktop` as
+hidden without warning; separately, `~/Desktop`, `~/Documents` and
+`~/Downloads` require an explicit permission grant for a launched
+subprocess to read from at all. Installing outside those folders (`~/dev`,
+`~/code`, anywhere not cloud-synced) avoids both.
+
+### In practice
+
+Three exchanges from testing this against Claude Desktop, exercised with
+natural-language questions rather than pre-filled parameters and cross-checked
+independently against each tool's own output:
+
+> *"Un compañero me dice que un bono al 4% semestral... cotizando al 97,80%,
+> rinde un 4,01%. ¿Tiene sentido?"*
+> — called `check_consistency_tool` directly rather than recomputing from
+> scratch, correctly identified the 67.67 bp error, and explained why without
+> needing to iterate: *"el bono cotiza bajo par, así que obligatoriamente
+> cupón < rendimiento corriente < TIR."*
+
+> *"Un bono al 3,5% que vence en 2032 cotiza a 96,4. ¿Qué rentabilidad me da?"*
+> — face value, issue date and payment frequency were all missing. The
+> schema's required `issue_date` field rejected the first call attempt
+> (`MCP error -32602: invalid_type`); the model disclosed the assumption it
+> then made rather than silently inventing it, and computed both semi-annual
+> and annual scenarios to show the frequency assumption barely moved the
+> answer.
+
+> *"¿Cuál tiene más riesgo de tipos: el A (4%, vence 2029, cotiza a 98) o el B
+> (2%, vence 2035, cotiza a 85)?"*
+> — two chained tool calls, correct verdict (B, 7.43 years vs 2.14), and an
+> explanation that separated the two forces at work: longer maturity *and* a
+> low coupon that pushes more of the bond's value into the final principal
+> payment. It also flagged, unprompted, that comparing DV01 in currency terms
+> gives a different ratio than comparing modified duration in percentage
+> terms, since the two bonds don't trade at the same price.
+
 ### Auditing a suspect figure
 
 `check_consistency_tool` exists for the case that started this project —
@@ -169,8 +216,11 @@ pip install -e ".[dev]"
 python -m pytest -q
 ```
 
-55 tests. Some pin the numbers in the write-up: if someone ever swaps the
-divisor back, `test_naive_divisor_is_the_one_that_disagrees` fails.
+59 tests. Some pin the numbers in the write-up: if someone ever swaps the
+divisor back, `test_naive_divisor_is_the_one_that_disagrees` fails. Others
+guard the MCP schema itself — `test_every_parameter_carries_a_description`
+exists because an earlier version of this server shipped with none, which a
+model could only have discovered by guessing.
 
 ## Not covered
 
