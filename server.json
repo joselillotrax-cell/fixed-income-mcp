@@ -6,12 +6,12 @@
     "url": "https://github.com/joselillotrax-cell/fixed-income-mcp",
     "source": "github"
   },
-  "version": "0.1.1",
+  "version": "0.1.2",
   "packages": [
     {
       "registryType": "pypi",
-      "identifier": "bondmath[mcp]",
-      "version": "0.1.1",
+      "identifier": "bondmath",
+      "version": "0.1.2",
       "transport": {
         "type": "stdio"
       }

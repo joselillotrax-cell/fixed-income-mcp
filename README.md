@@ -10,7 +10,11 @@ things separate it from a calculator: every analytic duration is validated
 against a convention-free numerical one, and every valuation is tested against
 the bounds a correct answer has to satisfy.
 
-Pure standard library. No dependencies.
+The pricing and analytics core (`bondmath.bond`, `.pricing`, `.analytics`,
+`.checks`, `.daycount`, `.schedule`) is pure standard library. The package as
+distributed also installs the [MCP SDK](https://pypi.org/project/mcp/),
+required by `bondmath.server` — see [As an MCP server](#as-an-mcp-server) for
+why that dependency isn't optional.
 
 ---
 
@@ -127,8 +131,13 @@ whether the number is admissible, not just what it is.
 ### Install
 
 ```bash
-pip install "bondmath[mcp]"
+pip install bondmath
 ```
+
+`mcp` is a required dependency rather than an optional extra — the MCP
+registry validates a package's `identifier` against PyPI by exact project
+name, and an extras-qualified name like `bondmath[mcp]` fails that check. A
+plain install has to be enough to run the server.
 
 Then register it. In Claude Desktop, add to `claude_desktop_config.json`:
 

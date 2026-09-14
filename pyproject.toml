@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "bondmath"
-version = "0.1.1"
+version = "0.1.2"
 description = "Fixed-income analytics that cross-check their own work"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -18,14 +18,17 @@ classifiers = [
   "Programming Language :: Python :: 3",
   "Topic :: Office/Business :: Financial",
 ]
-# The analytics core has no dependencies. The MCP server layer needs the SDK,
-# which is why it sits behind an extra: `pip install bondmath` gives you the
-# library alone, `pip install bondmath[mcp]` adds the server.
-dependencies = []
+# bondmath.bond/.pricing/.analytics/.checks/.daycount/.schedule are pure
+# standard library. mcp is required at the package level, not left optional,
+# because the MCP registry's own publish validator resolves `identifier`
+# against PyPI by exact project name and rejects a name that includes an
+# extras qualifier like "bondmath[mcp]" — so there is no way to publish an
+# MCP-registry listing for an extras-gated dependency. A plain `pip install
+# bondmath` or `uvx bondmath` must be enough to run the server.
+dependencies = ["mcp>=2.0"]
 
 [project.optional-dependencies]
-mcp = ["mcp>=2.0"]
-dev = ["pytest>=8.0", "anyio>=4.0", "mcp>=2.0"]
+dev = ["pytest>=8.0", "anyio>=4.0"]
 
 [project.scripts]
 fixed-income-mcp = "bondmath.server:main"
